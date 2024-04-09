@@ -14,7 +14,7 @@ SupportsPrompt = Union[str, SupportsImage]
 
 
 class Image(BaseModel):
-  """A class to represent an image. The image can be initialized with pixels, a base64 string, or a file path.
+  """A class to represent an image. The image can be initialized with a numpy array, a base64 string, or a file path.
 
   Attributes:
       array (Optional[np.ndarray]): The image represented as a NumPy array.
@@ -40,6 +40,7 @@ class Image(BaseModel):
       >>> pil_image = img_from_array.pil
   """
   model_config: ConfigDict = ConfigDict(arbitrary_types_allowed=True)
+  
   array: Optional[np.ndarray] = Field(None, exclude=True)
   base64: Optional[str] = ''
   encoding: str = 'png'
@@ -48,7 +49,6 @@ class Image(BaseModel):
   url: Optional[str] = Field(None, exclude=True)
   size: Optional[tuple[int, int]] = Field(None, exclude=True)
 
-  
   def __init__(self, arg=None, **kwargs):
     if arg is not None:
       if isinstance(arg, str):

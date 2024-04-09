@@ -7,13 +7,11 @@ from typing import Any, Literal, Optional, Union
 import backoff
 import numpy as np
 import openai
-from openai.types import Completion
-from openai.types.chat import ChatCompletion
 
 import dsp
 from dsp.modules.cache_utils import CacheMemory, NotebookCacheMemory, cache_turn_on
 from dsp.modules.vlm import VLM
-from dspy.primitives.vision import Image
+from dspy.primitives.vision import Image, SupportsImage
 
 # Configure logging
 logging.basicConfig(
@@ -23,7 +21,21 @@ logging.basicConfig(
     force=True, # Don't log to azure_openai_usage.log
 )
 
-ERRORS = (openai._exceptions.RateLimitError,)
+try:
+    OPENAI_LEGACY = int(openai.version.__version__[0]) == 0
+except Exception:
+    OPENAI_LEGACY = True
+
+try:
+    import openai.error
+    from openai.openai_object import OpenAIObject
+
+    ERRORS = (
+        openai.error.RateLimitError,
+    )
+except Exception:
+    ERRORS = (openai.RateLimitError,)
+    OpenAIObject = dict
 
 
 def backoff_hdlr(details) -> None:
@@ -51,7 +63,6 @@ class GPT4Vision(VLM):
       api_key: Optional[str] = os.getenv("OPENAI_API_KEY"),
       api_provider: Literal["openai"] = "openai",
       api_base: Optional[str] = None,
-      model_type: Literal["chat", "text", "vision"] = None,
       system_prompt: Optional[str] = None,
       **kwargs,
   ):
@@ -61,8 +72,7 @@ class GPT4Vision(VLM):
 
     self.system_prompt = system_prompt
 
-    default_model_type = "vision"
-    self.model_type = model_type if model_type else default_model_type
+    self.model_type = "chat"
 
     if api_key:
       openai.api_key = api_key
@@ -93,40 +103,41 @@ class GPT4Vision(VLM):
       total_tokens = usage_data.get("total_tokens")
       logging.info(f"{total_tokens}")
 
-  def basic_request(self, prompt: str, image: Union[str, np.ndarray, Image] = None, **kwargs) -> Any:
-    """Handles retreival of GPT-4 completions and chats. Use the Image class to specify encoding of image data."""
+  def basic_request(self, prompt: str, image: SupportsImage = None, **kwargs) -> Any:
+    """Handles retrieval of GPT-4 completions and chats. Use the Image class to specify encoding of image data."""
     """Image data can also be passed as a numpy array, base64 string, or file path."""
     raw_kwargs = kwargs
 
     kwargs = {**self.kwargs, **kwargs}
-    if True: # self.model_type == "chat":
-      if image is not None:
-        image = Image.init_from(image)
-        content = [
-            {
-                "type": "text",
-                "text": prompt,
-            },
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": image.image_url,
-                },
-            },
-        ]
-      else:
-        content = prompt
-      messages = [{"role": "user", "content": content}]
-      if self.system_prompt:
+   
+    if image is not None:
+      image = Image(image) if not isinstance(image, Image) else image
+      content = [
+          {
+              "type": "text",
+              "text": prompt,
+          },
+          {
+              "type": "image_url",
+              "image_url": {
+                  "url": image.url,
+              },
+          },
+      ]
+    else:
+      content = prompt
+    messages = [{"role": "user", "content": content}]
+    if self.system_prompt:
         messages.insert(0, {"role": "system", "content": self.system_prompt})
-      kwargs["messages"] = messages
+   
+    kwargs["messages"] = messages
+    kwargs = {"stringify_request": json.dumps(kwargs)}
+    response = chat_request(**kwargs)
 
-      kwargs = {"stringify_request": json.dumps(kwargs)}
-      response = chat_request(**kwargs)
 
     history = {
         "prompt": prompt,
-        "image": Image.init_from(image).image_url if image else None,
+        "image": image,
         "response": response,
         "kwargs": kwargs,
         "raw_kwargs": raw_kwargs,
@@ -135,20 +146,21 @@ class GPT4Vision(VLM):
 
     return response
 
+
   @backoff.on_exception(
       backoff.expo,
       ERRORS,
       max_time=10,
       on_backoff=backoff_hdlr,
   )
-  def request(self, prompt: str, image: Union[str, np.ndarray, Image] = None, **kwargs) -> Any:
+  def request(self, prompt: str, image: SupportsImage = None, **kwargs) -> Any:
     """Handles retreival of GPT-4 completions whilst handling rate limiting and caching."""
     if "model_type" in kwargs:
       del kwargs["model_type"]
 
     return self.basic_request(prompt, image, **kwargs)
 
-  def _get_choice_text(self, choice: dict[str, Any]) -> str:
+  def _get_choice_content(self, choice: dict[str, Any]) -> str:
     if self.model_type == "chat":
       return choice["message"]["content"]
     return choice["text"]
@@ -173,22 +185,18 @@ class GPT4Vision(VLM):
     Returns:
       list[dict[str, Any]]: list of completion choices
     """
-    assert only_completed, "for now"
-    assert return_sorted is False, "for now"
-
     response = self.request(prompt, image, **kwargs)
 
     if dsp.settings.log_openai_usage:
       self.log_usage(response)
 
     choices = response["choices"]
-
     completed_choices = [c for c in choices if c["finish_reason"] != "length"]
 
     if only_completed and len(completed_choices):
       choices = completed_choices
 
-    completions = [self._get_choice_text(c) for c in choices]
+    completions = [self._get_choice_content(c) for c in choices]
     if return_sorted and kwargs.get("n", 1) > 1:
       scored_completions = []
 
@@ -211,33 +219,21 @@ class GPT4Vision(VLM):
     return completions
 
 
-@CacheMemory.cache
-def cached_gpt4vision_completion_request(**kwargs) -> Completion:
-  return openai.completions.create(**kwargs)
 
-
-@functools.lru_cache(maxsize=None if cache_turn_on else 0)
-@NotebookCacheMemory.cache
-def cached_gpt4vision_completion_request_wrapped(**kwargs) -> Completion:
-  return cached_gpt4vision_completion_request(**kwargs)
 
 
 @CacheMemory.cache
-def cached_gpt4vision_chat_request(**kwargs) -> ChatCompletion:
+def cached_gpt4vision_chat_request(**kwargs) -> Any:
   if "stringify_request" in kwargs:
     kwargs = json.loads(kwargs["stringify_request"])
-  return openai.chat.completions.create(**kwargs)
+  return openai.ChatCompletion.create(**kwargs)
 
 
 @functools.lru_cache(maxsize=None if cache_turn_on else 0)
 @NotebookCacheMemory.cache
-def cached_gpt4vision_chat_request_wrapped(**kwargs) -> ChatCompletion:
+def cached_gpt4vision_chat_request_wrapped(**kwargs) -> Any:
   return cached_gpt4vision_chat_request(**kwargs)
 
 
 def chat_request(**kwargs) -> dict[str, Any]:
-  return cached_gpt4vision_chat_request_wrapped(**kwargs).model_dump()
-
-
-def completions_request(**kwargs) -> dict[str, Any]:
-  return cached_gpt4vision_completion_request_wrapped(**kwargs).model_dump()
+  return cached_gpt4vision_chat_request_wrapped(**kwargs)
