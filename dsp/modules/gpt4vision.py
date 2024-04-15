@@ -231,15 +231,15 @@ class GPT4Vision(VLM):
 
 
 
-@CacheMemory.cache
+# @CacheMemory.cache
 def cached_gpt4vision_chat_request(**kwargs) -> Any:
   if "stringify_request" in kwargs:
     kwargs = json.loads(kwargs["stringify_request"])
   return openai.chat.completions.create(**kwargs)
 
 
-@functools.lru_cache(maxsize=None if cache_turn_on else 0)
-@NotebookCacheMemory.cache
+# @functools.lru_cache(maxsize=None if cache_turn_on else 0)
+# @NotebookCacheMemory.cache
 def cached_gpt4vision_chat_request_wrapped(**kwargs) -> Any:
   return cached_gpt4vision_chat_request(**kwargs)
 
@@ -248,15 +248,15 @@ def chat_request(**kwargs) -> dict[str, Any]:
 
 
 
-@CacheMemory.cache
+# @CacheMemory.cache
 def cached_gpt4vision_completion_request(**kwargs) -> Any:
   if "stringify_request" in kwargs:
     kwargs = json.loads(kwargs["stringify_request"])
   return openai.completions.create(**kwargs)
 
 
-@functools.lru_cache(maxsize=None if cache_turn_on else 0)
-@NotebookCacheMemory.cache
+# @functools.lru_cache(maxsize=None if cache_turn_on else 0)
+# @NotebookCacheMemory.cache
 def cached_gpt4vision_completion_request_wrapped(**kwargs) -> Any:
   return cached_gpt4vision_completion_request(**kwargs)
 
@@ -265,19 +265,19 @@ def completion_request(**kwargs) -> dict[str, Any]:
   return cached_gpt4vision_completion_request_wrapped(**kwargs)
 
 
-@CacheMemory.cache
+# @CacheMemory.cache
 def legacy_cached_gpt4vision_chat_request(**kwargs) -> Any:
   if "stringify_request" in kwargs:
     kwargs = json.loads(kwargs["stringify_request"])
   return openai.ChatCompletion.create(**kwargs)
 
-@functools.lru_cache(maxsize=None if cache_turn_on else 0)
-@NotebookCacheMemory.cache
+# @functools.lru_cache(maxsize=None if cache_turn_on else 0)
+# @NotebookCacheMemory.cache
 def legacy_cached_gpt4vision_chat_request_wrapped(**kwargs) -> Any:
   return legacy_cached_gpt4vision_chat_request(**kwargs)
 
 
-@CacheMemory.cache
+# @CacheMemory.cache
 def legacy_chat_request(**kwargs) -> Any:
   if "stringify_request" in kwargs:
     kwargs = json.loads(kwargs["stringify_request"])
