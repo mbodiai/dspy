@@ -4,13 +4,13 @@ from typing import Any, Optional
 
 import backoff
 
-from dsp.modules.lm import LM
+from dsp.modules.vlm import VLM
+from dsp.primitives.vision import Image, SupportsImage
 
 try:
-    import anthropic
-    anthropic_rate_limit = anthropic.RateLimitError
+    from anthropic import RateLimitError
 except ImportError:
-    anthropic_rate_limit = Exception
+    RateLimitError = Exception
 
 logger = logging.getLogger(__name__)
 BASE_URL = "https://api.anthropic.com/v1/messages"
@@ -29,7 +29,7 @@ def giveup_hdlr(details):
         return False
     return True
 
-class Claude(LM):
+class Claude(VLM):
     """Wrapper around anthropic's API. Supports both the Anthropic and Azure APIs."""
     def __init__(
         self,
@@ -66,15 +66,24 @@ class Claude(LM):
             total_tokens = usage_data.input_tokens + usage_data.output_tokens
             logger.info(f'{total_tokens}')
 
-    def basic_request(self, prompt: str, **kwargs):
+    def basic_request(self, prompt: str, image: SupportsImage=None, **kwargs):
         raw_kwargs = kwargs
         kwargs = {**self.kwargs, **kwargs}
         # caching mechanism requires hashable kwargs
-        kwargs["messages"] = [{"role": "user", "content": prompt}]
+        content = [{"type": "text", "text": prompt}]
+        if image:
+            image = Image(image) if not isinstance(image, Image) else image
+            content.append({"type": "image", "source": {
+                "type": "base64",
+                "media_type": f"image/{image.encoding}",
+                "data": image.base64,
+            }})
+        kwargs["messages"] = [{"role": "user", "content": content}]
         kwargs.pop("n")
         response = self.client.messages.create(**kwargs)
         history = {
             "prompt": prompt,
+            "image": image,
             "response": response,
             "kwargs": kwargs,
             "raw_kwargs": raw_kwargs,
@@ -84,7 +93,7 @@ class Claude(LM):
 
     @backoff.on_exception(
         backoff.expo,
-        (anthropic_rate_limit),
+        (RateLimitError,),
         max_time=1000,
         max_tries=8,
         on_backoff=backoff_hdlr,

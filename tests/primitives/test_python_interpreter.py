@@ -1,5 +1,5 @@
 import pytest
-from dspy.primitives.python_interpreter import PythonInterpreter, TextPrompt, CodePrompt
+from dspy.primitives.python_interpreter import PythonInterpreter, TextModality, CodeModality
 
 def test_execute_simple_code():
     interpreter = PythonInterpreter(action_space={'print': print})
@@ -28,17 +28,17 @@ def test_fuzzy_variable_matching():
     assert result == 5, "Fuzzy variable matching should work"
 
 def test_text_prompt_keyword_extraction():
-    prompt = TextPrompt("Hello {name}, how are you?")
+    prompt = TextModality("Hello {name}, how are you?")
     assert 'name' in prompt.key_words, "Keyword 'name' should be extracted"
 
 def test_text_prompt_formatting():
-    prompt = TextPrompt("Hello {name}, how are you?")
+    prompt = TextModality("Hello {name}, how are you?")
     formatted = prompt.format(name="Alice")
     assert formatted == "Hello Alice, how are you?", "Should format with provided value"
 
 def test_code_prompt_execution():
     action_space = {'len': len}
     interpreter = PythonInterpreter(action_space=action_space)
-    code_prompt = CodePrompt("result = len('hello')")
+    code_prompt = CodeModality("result = len('hello')")
     result, _ = code_prompt.execute(interpreter)
     assert result == 5, "Code execution should return the length of 'hello'"

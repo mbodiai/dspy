@@ -63,7 +63,7 @@ def test_signature_optimizer_statistics_tracking():
 
 def test_optimization_and_output_verification():
     lm = DummyLM([
-        "Optimized Prompt",
+        "Optimized Modality",
         "Optimized Prefix",
     ])
     dspy.settings.configure(lm=lm)
@@ -83,7 +83,7 @@ def test_optimization_and_output_verification():
     assert prediction.output == "No more responses"
 
     assert lm.get_convo(-1) == textwrap.dedent("""\
-        Optimized Prompt
+        Optimized Modality
 
         ---
 
