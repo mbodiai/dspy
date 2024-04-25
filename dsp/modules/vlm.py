@@ -48,7 +48,7 @@ class VLM(LM):
 
         for x in reversed(self.history[-100:]):
             prompt = x["prompt"]
-            image = x["image"]
+            image = x.get("image", "")
             if prompt != last_prompt:
                 if provider == "clarifai" or provider == "google":
                     printed.append((prompt, image, x["response"]))

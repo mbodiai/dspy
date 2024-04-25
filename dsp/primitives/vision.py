@@ -189,7 +189,6 @@ class Image(BaseModel):
     elif 'array' in values:
       image = PILModule.fromarray(values['array']).convert('RGB')
       validated_values.update(cls.from_pil(image, validated_values['encoding']))
-      print(validated_values)
 
     elif 'pil' in values:
       validated_values.update(cls.from_pil(values['pil'], validated_values['encoding']))

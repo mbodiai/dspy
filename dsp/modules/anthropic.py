@@ -69,27 +69,30 @@ class Claude(VLM):
     def basic_request(self, prompt: str, image: SupportsImage=None, **kwargs):
         raw_kwargs = kwargs
         kwargs = {**self.kwargs, **kwargs}
-        # caching mechanism requires hashable kwargs
-        content = [{"type": "text", "text": prompt}]
-        if image:
-            image = Image(image) if not isinstance(image, Image) else image
-            content.append({"type": "image", "source": {
-                "type": "base64",
-                "media_type": f"image/{image.encoding}",
-                "data": image.base64,
-            }})
-        kwargs["messages"] = [{"role": "user", "content": content}]
+        if isinstance(prompt, list):
+            kwargs["messages"] = prompt
+        else:
+            content = [{"type": "text", "text": prompt}]
+            if image:
+                image = Image(image) if not isinstance(image, Image) else image
+                content.append({"type": "image", "source": {
+                    "type": "base64",
+                    "media_type": f"image/{image.encoding}",
+                    "data": image.base64,
+                }})
+            kwargs["messages"] = [{"role": "user", "content": content}]
         kwargs.pop("n")
+        kwargs.pop("remember", None)
         response = self.client.messages.create(**kwargs)
         history = {
-            "prompt": prompt,
-            "image": image,
+            "prompt": prompt[-1]["content"][0]['text'] if isinstance(prompt, list) else prompt,
+            # "image": image,
             "response": response,
             "kwargs": kwargs,
             "raw_kwargs": raw_kwargs,
         }
         self.history.append(history)
-        return response
+        return response.content[0].text
 
     @backoff.on_exception(
         backoff.expo,
