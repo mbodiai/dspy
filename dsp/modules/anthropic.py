@@ -1,11 +1,17 @@
+import functools
+import json
 import logging
 import os
 from typing import Any, Optional
 
 import backoff
+from mbodied.common.senses import Image, SupportsImage
 
+from dsp.modules.cache_utils import (
+    selective_cache,
+    cache_turn_on,
+)
 from dsp.modules.vlm import VLM
-from dsp.primitives.vision import Image, SupportsImage
 
 try:
     from anthropic import RateLimitError
@@ -15,6 +21,7 @@ except ImportError:
 logger = logging.getLogger(__name__)
 BASE_URL = "https://api.anthropic.com/v1/messages"
 
+
 def backoff_hdlr(details):
     """Handler from https://pypi.org/project/backoff/."""
     print(
@@ -23,14 +30,17 @@ def backoff_hdlr(details):
         "{kwargs}".format(**details),
     )
 
+
 def giveup_hdlr(details):
     """Wrapper function that decides when to give up on retry."""
     if "rate limits" in details.message:
         return False
     return True
 
+client = None  
 class Claude(VLM):
     """Wrapper around anthropic's API. Supports both the Anthropic and Azure APIs."""
+
     def __init__(
         self,
         model: str = "claude-3-opus-20240229",
@@ -42,10 +52,14 @@ class Claude(VLM):
         try:
             from anthropic import Anthropic
         except ImportError as err:
-            raise ImportError("Claude requires `pip install anthropic`.") from err
+            raise ImportError(
+                "Claude requires `pip install anthropic`.",
+            ) from err
 
         self.provider = "anthropic"
-        self.api_key = api_key = os.environ.get("ANTHROPIC_API_KEY") if api_key is None else api_key
+        self.api_key = api_key = (
+            os.environ.get("ANTHROPIC_API_KEY") if api_key is None else api_key
+        )
         self.api_base = BASE_URL if api_base is None else api_base
         self.kwargs = {
             "temperature": kwargs.get("temperature", 0.0),
@@ -57,16 +71,18 @@ class Claude(VLM):
         }
         self.kwargs["model"] = model
         self.history: list[dict[str, Any]] = []
-        self.client = Anthropic(api_key=api_key)
+        global client
+        client = Anthropic(api_key=api_key)
+        self.client = client
 
     def log_usage(self, response):
         """Log the total tokens from the Anthropic API response."""
         usage_data = response.usage
         if usage_data:
             total_tokens = usage_data.input_tokens + usage_data.output_tokens
-            logger.info(f'{total_tokens}')
+            logger.info(f"{total_tokens}")
 
-    def basic_request(self, prompt: str, image: SupportsImage=None, **kwargs):
+    def basic_request(self, prompt: str, image: SupportsImage = None, **kwargs):
         raw_kwargs = kwargs
         kwargs = {**self.kwargs, **kwargs}
         if isinstance(prompt, list):
@@ -75,17 +91,24 @@ class Claude(VLM):
             content = [{"type": "text", "text": prompt}]
             if image:
                 image = Image(image) if not isinstance(image, Image) else image
-                content.append({"type": "image", "source": {
-                    "type": "base64",
-                    "media_type": f"image/{image.encoding}",
-                    "data": image.base64,
-                }})
+                content.append(
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": f"image/{image.encoding}",
+                            "data": image.base64,
+                        },
+                    },
+                )
             kwargs["messages"] = [{"role": "user", "content": content}]
         kwargs.pop("n")
         kwargs.pop("remember", None)
-        response = self.client.messages.create(**kwargs)
+        response = claude_request(**kwargs)
         history = {
-            "prompt": prompt[-1]["content"][0]['text'] if isinstance(prompt, list) else prompt,
+            "prompt": prompt[-1]["content"][0]["text"]
+            if isinstance(prompt, list)
+            else prompt,
             # "image": image,
             "response": response,
             "kwargs": kwargs,
@@ -106,7 +129,9 @@ class Claude(VLM):
         """Handles retrieval of completions from Anthropic whilst handling API errors."""
         return self.basic_request(prompt, **kwargs)
 
-    def __call__(self, prompt, only_completed=True, return_sorted=False, **kwargs):
+    def __call__(
+        self, prompt, only_completed=True, return_sorted=False, **kwargs,
+    ):
         """Retrieves completions from Anthropic.
 
         Args:
@@ -133,3 +158,34 @@ class Claude(VLM):
                 continue
             completions = [c.text for c in response.content]
         return completions
+
+
+@selective_cache(ignore_fields=["source"])
+def cached_claude_request(**kwargs) -> Any:
+    print("kwargs:", kwargs)
+    return client.messages.create(**kwargs)
+
+# @functools.lru_cache(maxsize=None if cache_turn_on else 0)
+
+# def cached_claude_request_wrapped(**kwargs) -> Any:
+#     return cached_claude_request(**kwargs)
+
+
+def claude_request(**kwargs) -> dict[str, Any]:
+    return cached_claude_request(**kwargs)
+
+
+# # @CacheMemory.cache
+# def cached_gpt4vision_chat_request(**kwargs) -> Any:
+#   if "stringify_request" in kwargs:
+#     kwargs = json.loads(kwargs["stringify_request"])
+#   return openai.chat.completions.create(**kwargs)
+
+
+# # @functools.lru_cache(maxsize=None if cache_turn_on else 0)
+# # @NotebookCacheMemory.cache
+# def cached_gpt4vision_chat_request_wrapped(**kwargs) -> Any:
+#   return cached_gpt4vision_chat_request(**kwargs)
+
+# def chat_request(**kwargs) -> dict[str, Any]:
+#   return cached_gpt4vision_chat_request_wrapped(**kwargs)
