@@ -85,10 +85,10 @@ def selective_cache(ignore_fields=None):
             # Make the filtered_kwargs hashable
             key = make_hashable(filtered_kwargs)
             if key in cache_store:
-                print("Cache hit for key:", key)
+                print("Cache hit for key")
                 return cache_store[key]
             else:
-                print("Cache miss for key:", key)
+                print("Cache miss for key")
                 result = func(*args, **kwargs)
                 cache_store[key] = result
                 return result
