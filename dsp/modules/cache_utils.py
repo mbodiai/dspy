@@ -67,6 +67,14 @@ def filter_kwargs(kwargs, ignore_fields):
 
 def selective_cache(ignore_fields=None):
     ignore_fields = set(ignore_fields or [])
+    if not cache_turn_on:
+    # If caching is turned off, return a simple decorator that does nothing but call the function
+        def bypass_decorator(func):
+            @wraps(func)
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+            return wrapper
+        return bypass_decorator
     cache_store = {}
 
     def decorator(func):
@@ -86,7 +94,7 @@ def selective_cache(ignore_fields=None):
                 return result
         return wrapper
     return decorator
-    
+
 # Usage example adjusted for the setup
 @selective_cache(ignore_fields=['image', 'user.profile_picture'])
 def process_request(**kwargs) -> Dict[str, Any]:

@@ -88,6 +88,7 @@ class VLM(LM):
             if len(choices) > 1:
                 self.print_red(f" \t (and {len(choices)-1} other completions)", end="")
             print("\n\n\n")  # noqa: T201
+        return printed
 
     @abstractmethod
     def __call__(self, prompt, only_completed=True, return_sorted=False, **kwargs):

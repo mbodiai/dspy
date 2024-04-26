@@ -162,7 +162,7 @@ class Claude(VLM):
 
 @selective_cache(ignore_fields=["source"])
 def cached_claude_request(**kwargs) -> Any:
-    print("kwargs:", kwargs)
+    # print("kwargs:", kwargs)
     return client.messages.create(**kwargs)
 
 # @functools.lru_cache(maxsize=None if cache_turn_on else 0)
