@@ -115,7 +115,7 @@ class Claude(VLM):
                 },
             )
         kwargs["messages"] = messages + [{"role": "user", "content": content}]
-        logging.debug(f"kwargs: {kwargs}")
+        logging.info(f"kwargs: {kwargs}")
         kwargs.pop("n")
         kwargs.pop("stored_image", None)
         response = claude_request(**kwargs)
@@ -127,7 +127,7 @@ class Claude(VLM):
             "raw_kwargs": raw_kwargs,
         }
         self.history.append(history)
-        logging.debug(f"kwargs: {kwargs}")
+        logging.info(f"kwargs: {kwargs}")
         logging.debug(f"response: {response}")
         return response.content[0].text
 
