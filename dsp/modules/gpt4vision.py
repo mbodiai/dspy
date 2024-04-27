@@ -85,7 +85,6 @@ class GPT4Vision(VLM):
         "frequency_penalty": 0,
         "presence_penalty": 0,
         "n": 1,
-        "response_format": ActionsOrAnswers(actions=[ActionOrAnswer()]).simple_schema(),
         **kwargs,
     }
 
@@ -118,6 +117,7 @@ class GPT4Vision(VLM):
 
 
     content = [{"type": "text", "text": prompt}]
+
     if image is not None:
       image = Image(image) if not isinstance(image, Image) else image
       content = [
@@ -150,6 +150,7 @@ class GPT4Vision(VLM):
       kwargs = {"stringify_request": json.dumps(kwargs)}
       response = completion_request(**kwargs).choices[0].message.content
     logging.debug(f"kwargs: {kwargs}")
+    logging.debug(f"response: {response}")
     history = {
         "prompt": prompt,
         "system_prompt": system_prompt,

@@ -1,5 +1,3 @@
-import functools
-import json
 import logging
 import os
 from typing import Any, Optional
@@ -7,10 +5,6 @@ from typing import Any, Optional
 import backoff
 from mbodied.common.senses import Image, SupportsImage
 
-from dsp.modules.cache_utils import (
-    selective_cache,
-    cache_turn_on,
-)
 from dsp.modules.vlm import VLM
 
 try:
@@ -92,9 +86,22 @@ class Claude(VLM):
             for h in history:
                 messages += [{"role": "user", "content": prompt},
                                 {"role": "assistant", "content": h["response"].content}]
-
-
-        content = [{"type": "text", "text": prompt}]
+        content = []
+        if kwargs.get("stored_image", None):
+            content.append({"type": "text", "text": "Best recent view of the scene."})
+            image = kwargs["stored_image"]
+            content.append(
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": f"image/{image.encoding}",
+                        "data": image.base64,
+                    },
+                },
+            )
+            kwargs.pop("stored_image")
+        content += [{"type": "text", "text": prompt}]
         if image:
             image = Image(image) if not isinstance(image, Image) else image
             content.append(
@@ -119,6 +126,8 @@ class Claude(VLM):
             "raw_kwargs": raw_kwargs,
         }
         self.history.append(history)
+        logging.debug(f"kwargs: {kwargs}")
+        logging.debug(f"response: {response}")
         return response.content[0].text
 
     @backoff.on_exception(
