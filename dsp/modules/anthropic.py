@@ -117,6 +117,7 @@ class Claude(VLM):
         kwargs["messages"] = messages + [{"role": "user", "content": content}]
         logging.debug(f"kwargs: {kwargs}")
         kwargs.pop("n")
+        kwargs.pop("stored_image")
         response = claude_request(**kwargs)
         history = {
             "prompt": prompt,
