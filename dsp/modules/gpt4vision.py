@@ -1,4 +1,3 @@
-import functools
 import json
 import logging
 import os
@@ -7,11 +6,10 @@ from typing import Any, Literal, Optional, Union
 import backoff
 import numpy as np
 import openai
+from mbodied.common.senses import Image, SupportsImage
 
 import dsp
-from dsp.modules.cache_utils import CacheMemory, NotebookCacheMemory, cache_turn_on
 from dsp.modules.vlm import VLM
-from dsp.primitives.vision import Image, SupportsImage
 
 # Configure logging
 logging.basicConfig(
@@ -87,6 +85,7 @@ class GPT4Vision(VLM):
         "frequency_penalty": 0,
         "presence_penalty": 0,
         "n": 1,
+        "response_format": "json",
         **kwargs,
     }
 
@@ -109,7 +108,16 @@ class GPT4Vision(VLM):
     raw_kwargs = kwargs
 
     kwargs = {**self.kwargs, **kwargs}
-   
+    messages = kwargs.get("messages", [])
+    if kwargs.get("n_past",False):
+        history = self.history[-kwargs["n_past"]:]
+        kwargs.pop("n_past")
+        for h in history:
+            messages += [{"role": "user", "content": prompt},
+                            {"role": "assistant", "content": h["response"].content}]
+
+
+    content = [{"type": "text", "text": prompt}]
     if image is not None:
       image = Image(image) if not isinstance(image, Image) else image
       content = [
@@ -128,22 +136,23 @@ class GPT4Vision(VLM):
       content = prompt
     
     if self.model_type == "chat":
-      messages = [{"role": "user", "content": content}]
-      if self.system_prompt:
-        messages.insert(0, {"role": "system", "content": self.system_prompt})
-   
+      messages = messages + [{"role": "user", "content": content}]
+      if self.system_prompt or kwargs.get("system"):
+        system_prompt =  kwargs.get("system") or self.system_prompt
+        messages.insert(0, {"role": "system", "content": system_prompt})
+      kwargs.pop("system", None)
       kwargs["messages"] = messages
       kwargs = {"stringify_request": json.dumps(kwargs)}
-      response = chat_request(**kwargs)
+      response = chat_request(**kwargs).choices[0].message.content
     else:
       kwargs["prompt"] = prompt
       kwargs = {"stringify_request": json.dumps(kwargs)}
-      response = completion_request(**kwargs)
+      response = completion_request(**kwargs).choices[0].message.content
 
 
     history = {
         "prompt": prompt,
-        "image": image.base64 if image else None,
+        # "image": image.base64 if image else None,
         "response": response.model_dump() if not OPENAI_LEGACY else response,
         "kwargs": kwargs,
         "raw_kwargs": raw_kwargs,

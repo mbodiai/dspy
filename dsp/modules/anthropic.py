@@ -85,30 +85,34 @@ class Claude(VLM):
     def basic_request(self, prompt: str, image: SupportsImage = None, **kwargs):
         raw_kwargs = kwargs
         kwargs = {**self.kwargs, **kwargs}
-        if isinstance(prompt, list):
-            kwargs["messages"] = prompt
-        else:
-            content = [{"type": "text", "text": prompt}]
-            if image:
-                image = Image(image) if not isinstance(image, Image) else image
-                content.append(
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": f"image/{image.encoding}",
-                            "data": image.base64,
-                        },
+        messages = kwargs.get("messages", [])
+        if kwargs.get("n_past",False):
+            history = self.history[-kwargs["n_past"]:]
+            kwargs.pop("n_past")
+            for h in history:
+                messages += [{"role": "user", "content": prompt},
+                                {"role": "assistant", "content": h["response"].content}]
+
+
+        content = [{"type": "text", "text": prompt}]
+        if image:
+            image = Image(image) if not isinstance(image, Image) else image
+            content.append(
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": f"image/{image.encoding}",
+                        "data": image.base64,
                     },
-                )
-            kwargs["messages"] = [{"role": "user", "content": content}]
+                },
+            )
+        kwargs["messages"] = messages + [{"role": "user", "content": content}]
+        logging.debug(f"kwargs: {kwargs}")
         kwargs.pop("n")
-        kwargs.pop("remember", None)
         response = claude_request(**kwargs)
         history = {
-            "prompt": prompt[-1]["content"][0]["text"]
-            if isinstance(prompt, list)
-            else prompt,
+            "prompt": prompt,
             # "image": image,
             "response": response,
             "kwargs": kwargs,
@@ -160,7 +164,7 @@ class Claude(VLM):
         return completions
 
 
-@selective_cache(ignore_fields=["source"])
+# @selective_cache(ignore_fields=["source"])
 def cached_claude_request(**kwargs) -> Any:
     # print("kwargs:", kwargs)
     return client.messages.create(**kwargs)
