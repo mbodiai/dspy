@@ -7,7 +7,7 @@ import backoff
 import numpy as np
 import openai
 from mbodied.common.senses import Image, SupportsImage
-
+from mbodied.common.motions import ActionsOrAnswers, ActionOrAnswer
 import dsp
 from dsp.modules.vlm import VLM
 
@@ -85,7 +85,7 @@ class GPT4Vision(VLM):
         "frequency_penalty": 0,
         "presence_penalty": 0,
         "n": 1,
-        "response_format": "json",
+        "response_format": ActionsOrAnswers(actions=[ActionOrAnswer()]).simple_schema(),
         **kwargs,
     }
 
@@ -135,6 +135,7 @@ class GPT4Vision(VLM):
     else:
       content = prompt
     
+    system_prompt = kwargs.get("system_prompt", self.system_prompt)
     if self.model_type == "chat":
       messages = messages + [{"role": "user", "content": content}]
       if self.system_prompt or kwargs.get("system"):
@@ -148,19 +149,18 @@ class GPT4Vision(VLM):
       kwargs["prompt"] = prompt
       kwargs = {"stringify_request": json.dumps(kwargs)}
       response = completion_request(**kwargs).choices[0].message.content
-
-
+    logging.debug(f"kwargs: {kwargs}")
     history = {
         "prompt": prompt,
+        "system_prompt": system_prompt,
         # "image": image.base64 if image else None,
-        "response": response.model_dump() if not OPENAI_LEGACY else response,
+        "response": response,
         "kwargs": kwargs,
         "raw_kwargs": raw_kwargs,
     }
     self.history.append(history)
 
-    return response
-
+    return json.loads(response.split("```")[1].split("json")[1].strip())
 
   @backoff.on_exception(
       backoff.expo,
