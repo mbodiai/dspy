@@ -112,26 +112,30 @@ class GPT4Vision(VLM):
         history = self.history[-kwargs["n_past"]:]
         kwargs.pop("n_past")
         for h in history:
-            messages += [{"role": "user", "content": prompt},
-                            {"role": "assistant", "content": h["response"].content}]
+            messages += [{"role": "user", "content": h['prompt']},
+                            {"role": "assistant", "content": h["response"]}]
 
-
-    content = [{"type": "text", "text": prompt}]
-
+    content = []
+    if kwargs.get("stored_image", None):
+        content.append({"type": "text", "text": "Best recent view of the scene."})
+        image = kwargs["stored_image"]
+        content.append(
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": image.url,
+            },
+        })
+        kwargs.pop("stored_image")
+    content += [{"type": "text", "text": prompt}]
     if image is not None:
-      image = Image(image) if not isinstance(image, Image) else image
-      content = [
-          {
-              "type": "text",
-              "text": prompt,
-          },
+        content.append(
           {
               "type": "image_url",
               "image_url": {
                   "url": image.url,
               },
-          },
-      ]
+          })
     else:
       content = prompt
     
@@ -158,7 +162,7 @@ class GPT4Vision(VLM):
     logging.debug(f"response: {response}")
     history = {
         "prompt": prompt,
-        "system_prompt": system_prompt,
+        # "system_prompt": system_prompt,
         # "image": image.base64 if image else None,
         "response": response,
         "kwargs": kwargs,
@@ -167,7 +171,6 @@ class GPT4Vision(VLM):
     self.history.append(history)
 
     return response
-    return json.loads(response.split("```")[1].split("json")[1].strip())
 
   @backoff.on_exception(
       backoff.expo,
@@ -184,7 +187,7 @@ class GPT4Vision(VLM):
 
   def _get_choice_content(self, choice: dict[str, Any]) -> str:
     if self.model_type == "chat":
-      return choice["message"]["content"]
+      return choice
     return choice["text"]
 
   def __call__(

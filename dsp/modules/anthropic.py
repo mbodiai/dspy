@@ -105,7 +105,7 @@ class Claude(VLM):
             history = self.history[-kwargs["n_past"]:]
             kwargs.pop("n_past")
             for h in history:
-                messages += [{"role": "user", "content": prompt},
+                messages += [{"role": "user", "content": h['prompt']},
                                 {"role": "assistant", "content": h["response"].content}]
         content = []
         if kwargs.get("stored_image", None):

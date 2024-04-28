@@ -49,6 +49,7 @@ class VLM(LM):
         for x in reversed(self.history[-100:]):
             prompt = x["prompt"]
             image = x.get("image", "")
+            
             if prompt != last_prompt:
                 if provider == "clarifai" or provider == "google":
                     printed.append((prompt, image, x["response"]))
@@ -58,7 +59,7 @@ class VLM(LM):
                 elif provider == "cohere":
                     printed.append((prompt,image, x["response"].generations))
                 else:
-                    printed.append((prompt,image, x))
+                    printed.append((prompt,image, x["response"]))
 
             last_prompt = prompt
 
@@ -76,7 +77,7 @@ class VLM(LM):
             if provider == "cohere":
                 text = choices[0].text
             elif provider == "openai" or provider == "ollama":
-                text = " " + self._get_choice_content(choices).strip()
+                text = " " + str(self._get_choice_content(choices))
             elif provider == "clarifai":
                 text = choices
             elif provider == "google":
