@@ -56,7 +56,7 @@ class GPT4Vision(VLM):
 
   def __init__(
       self,
-      model: str = "gpt-4-vision-preview",
+      model: str = "gpt-4-turbo",
       api_key: Optional[str] = os.getenv("OPENAI_API_KEY"),
       api_provider: Literal["openai"] = "openai",
       api_base: Optional[str] = None,
@@ -80,7 +80,7 @@ class GPT4Vision(VLM):
 
     self.kwargs = {
         "temperature": 0.0,
-        "max_tokens": 150,
+        "max_tokens": 2000,
         "top_p": 1,
         "frequency_penalty": 0,
         "presence_penalty": 0,
@@ -136,12 +136,16 @@ class GPT4Vision(VLM):
       content = prompt
     
     system_prompt = kwargs.get("system_prompt", self.system_prompt)
+    
     if self.model_type == "chat":
       messages = messages + [{"role": "user", "content": content}]
       if self.system_prompt or kwargs.get("system"):
         system_prompt =  kwargs.get("system") or self.system_prompt
         messages.insert(0, {"role": "system", "content": system_prompt})
       kwargs.pop("system", None)
+      kwargs.pop("system_prompt", None)
+      kwargs.pop("stored_image", None)
+      # print(f"messages: {messages}")
       kwargs["messages"] = messages
       kwargs = {"stringify_request": json.dumps(kwargs)}
       response = chat_request(**kwargs).choices[0].message.content
@@ -149,6 +153,7 @@ class GPT4Vision(VLM):
       kwargs["prompt"] = prompt
       kwargs = {"stringify_request": json.dumps(kwargs)}
       response = completion_request(**kwargs).choices[0].message.content
+    print(response)
     logging.debug(f"kwargs: {kwargs}")
     logging.debug(f"response: {response}")
     history = {
@@ -161,6 +166,7 @@ class GPT4Vision(VLM):
     }
     self.history.append(history)
 
+    return response
     return json.loads(response.split("```")[1].split("json")[1].strip())
 
   @backoff.on_exception(

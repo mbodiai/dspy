@@ -15,6 +15,25 @@ except ImportError:
 logger = logging.getLogger(__name__)
 logger1 = logging.getLogger("anthropic.log")
 logger2 = logging.getLogger("anthropic_light.log")
+
+# Set levels
+logger1.setLevel(logging.INFO)
+logger2.setLevel(logging.INFO)
+
+# Create file handlers
+handler1 = logging.FileHandler('anthropic.log')
+handler2 = logging.FileHandler('anthropic_light.log')
+
+# Create a formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# Add the formatter to the handlers
+handler1.setFormatter(formatter)
+handler2.setFormatter(formatter)
+
+# Add the handlers to the loggers
+logger1.addHandler(handler1)
+logger2.addHandler(handler2)
 BASE_URL = "https://api.anthropic.com/v1/messages"
 
 

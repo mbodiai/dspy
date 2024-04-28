@@ -58,7 +58,7 @@ class VLM(LM):
                 elif provider == "cohere":
                     printed.append((prompt,image, x["response"].generations))
                 else:
-                    printed.append((prompt,image, x["response"]["choices"]))
+                    printed.append((prompt,image, x))
 
             last_prompt = prompt
 
@@ -76,7 +76,7 @@ class VLM(LM):
             if provider == "cohere":
                 text = choices[0].text
             elif provider == "openai" or provider == "ollama":
-                text = " " + self._get_choice_content(choices[0]).strip()
+                text = " " + self._get_choice_content(choices).strip()
             elif provider == "clarifai":
                 text = choices
             elif provider == "google":
