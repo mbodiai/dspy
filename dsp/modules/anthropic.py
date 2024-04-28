@@ -13,6 +13,8 @@ except ImportError:
     RateLimitError = Exception
 
 logger = logging.getLogger(__name__)
+logger1 = logging.getLogger("anthropic.log")
+logger2 = logging.getLogger("anthropic_light.log")
 BASE_URL = "https://api.anthropic.com/v1/messages"
 
 
@@ -115,7 +117,7 @@ class Claude(VLM):
                 },
             )
         kwargs["messages"] = messages + [{"role": "user", "content": content}]
-        logging.info(f"kwargs: {kwargs}")
+        logger1.info(f"sending kwargs: {kwargs}")
         kwargs.pop("n")
         kwargs.pop("stored_image", None)
         response = claude_request(**kwargs)
@@ -127,8 +129,10 @@ class Claude(VLM):
             "raw_kwargs": raw_kwargs,
         }
         self.history.append(history)
-        logging.info(f"kwargs: {kwargs}")
-        logging.debug(f"response: {response}")
+        light_kwargs = {k: v for k, v in kwargs.items() if "image" not in k}
+        for k in light_kwargs:
+            logger2.info(f"{k}: {light_kwargs[k]}")
+            logger2.info(f"response: {response}")
         return response.content[0].text
 
     @backoff.on_exception(
