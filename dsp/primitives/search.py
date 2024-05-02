@@ -1,8 +1,10 @@
 from collections.abc import Iterable
 
 import numpy as np
-
+from langchain_chroma import Chroma
+from langchain_community.embeddings import HuggingFaceEmbeddings
 import dsp
+
 
 
 def retrieve(query: str, k: int, **kwargs) -> list[str]:

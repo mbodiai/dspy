@@ -74,9 +74,11 @@ class ChromadbRM(dspy.Retrieve):
             EmbeddingFunction[Embeddable]
         ] = ef.DefaultEmbeddingFunction(),
         k: int = 7,
+        passages: Optional[List[str]] = None,
     ):
-        self._init_chromadb(collection_name, persist_directory)
         self.ef = embedding_function
+        self._init_chromadb(collection_name, persist_directory, passages)
+
 
         super().__init__(k=k)
 
@@ -84,6 +86,7 @@ class ChromadbRM(dspy.Retrieve):
         self,
         collection_name: str,
         persist_directory: str,
+        passages: Optional[List[str]] = None
     ) -> chromadb.Collection:
         """Initialize chromadb and return the loaded index.
 
@@ -103,7 +106,12 @@ class ChromadbRM(dspy.Retrieve):
         )
         self._chromadb_collection = self._chromadb_client.get_or_create_collection(
             name=collection_name,
+            embedding_function=self.ef,
         )
+        if passages:
+            self.add_documents(passages)
+
+      
 
     @backoff.on_exception(
         backoff.expo,
@@ -121,6 +129,18 @@ class ChromadbRM(dspy.Retrieve):
         """
         return self.ef(queries)
 
+    def add_documents(self, documents: List[str]):
+        """Add documents to the chromadb collection.
+
+        Args:
+            documents (List[str]): List of documents to add to the collection.
+        """
+        ids, documents = [], []
+        for i, passage in enumerate(self.passages):
+            ids.append(i)
+            documents.append(passage)
+        self._chromadb_collection.add(ids, documents=documents)
+    
     def forward(
         self, query_or_queries: Union[str, List[str]], k: Optional[int] = None, **kwargs,
     ) -> dspy.Prediction:
