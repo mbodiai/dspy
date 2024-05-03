@@ -80,7 +80,7 @@ class GPT4Vision(VLM):
 
     self.kwargs = {
         "temperature": 0.0,
-        "max_tokens": 2000,
+        "max_tokens": 4000,
         "top_p": 1,
         "frequency_penalty": 0,
         "presence_penalty": 0,
@@ -105,7 +105,6 @@ class GPT4Vision(VLM):
     """Handles retrieval of GPT-4 completions and chats. Use the Image class to specify encoding of image data."""
     """Image data can also be passed as a numpy array, base64 string, or file path."""
     raw_kwargs = kwargs
-
     kwargs = {**self.kwargs, **kwargs}
     messages = kwargs.get("messages", [])
     if kwargs.get("n_past",False):
@@ -149,7 +148,9 @@ class GPT4Vision(VLM):
       kwargs.pop("system", None)
       kwargs.pop("system_prompt", None)
       kwargs.pop("stored_image", None)
-      # print(f"messages: {messages}")
+      with open('messages.txt', 'a') as f:
+        f.write('########### new request ###########')
+        f.write(f"messages: {messages}")
       kwargs["messages"] = messages
       kwargs = {"stringify_request": json.dumps(kwargs)}
       response = chat_request(**kwargs).choices[0].message.content
@@ -301,3 +302,4 @@ def legacy_chat_request(**kwargs) -> Any:
   if "stringify_request" in kwargs:
     kwargs = json.loads(kwargs["stringify_request"])
   return legacy_cached_gpt4vision_chat_request_wrapped(**kwargs)
+
