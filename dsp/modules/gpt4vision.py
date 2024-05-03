@@ -1,3 +1,4 @@
+from pprint import pprint
 import json
 import logging
 import os
@@ -115,17 +116,6 @@ class GPT4Vision(VLM):
                             {"role": "assistant", "content": h["response"]}]
 
     content = []
-    if kwargs.get("stored_image", None):
-        content.append({"type": "text", "text": "Best recent view of the scene."})
-        image = kwargs["stored_image"]
-        content.append(
-            {
-                "type": "image_url",
-                "image_url": {
-                    "url": image.url,
-            },
-        })
-        kwargs.pop("stored_image")
     content += [{"type": "text", "text": prompt}]
     if image is not None:
         content.append(
@@ -142,6 +132,7 @@ class GPT4Vision(VLM):
     
     if self.model_type == "chat":
       messages = messages + [{"role": "user", "content": content}]
+
       if self.system_prompt or kwargs.get("system"):
         system_prompt =  kwargs.get("system") or self.system_prompt
         messages.insert(0, {"role": "system", "content": system_prompt})
@@ -150,7 +141,7 @@ class GPT4Vision(VLM):
       kwargs.pop("stored_image", None)
       with open('messages.txt', 'a') as f:
         f.write('########### new request ###########')
-        f.write(f"messages: {messages}")
+        pprint(messages, stream=f)
       kwargs["messages"] = messages
       kwargs = {"stringify_request": json.dumps(kwargs)}
       response = chat_request(**kwargs).choices[0].message.content
@@ -158,7 +149,6 @@ class GPT4Vision(VLM):
       kwargs["prompt"] = prompt
       kwargs = {"stringify_request": json.dumps(kwargs)}
       response = completion_request(**kwargs).choices[0].message.content
-    print(response)
     logging.debug(f"kwargs: {kwargs}")
     logging.debug(f"response: {response}")
     history = {
