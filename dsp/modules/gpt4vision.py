@@ -6,7 +6,7 @@ from typing import Any, Literal, Optional, Union
 import backoff
 import numpy as np
 import openai
-from mbodied.common.senses import Image, SupportsImage
+from mbodied.types.sense.vision import Image, SupportsImage
 from mbodied.common.motions import ActionsOrAnswers, ActionOrAnswer
 import dsp
 from dsp.modules.vlm import VLM

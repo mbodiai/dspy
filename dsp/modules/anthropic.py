@@ -3,7 +3,7 @@ import os
 from typing import Any, Optional
 
 import backoff
-from mbodied.common.senses import Image, SupportsImage
+from mbodied.types.sense.vision import Image, SupportsImage
 
 from dsp.modules.vlm import VLM
 
