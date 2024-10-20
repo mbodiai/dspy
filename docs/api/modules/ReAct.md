@@ -9,8 +9,8 @@ The constructor initializes the `ReAct` class and sets up its attributes. It is 
 ```python
 import dsp
 import dspy
-from ..primitives.program import Module
-from .predict import Predict
+from dspy..primitives.program import Module
+from dspy.predict import Predict
 
 class ReAct(Module):
     def __init__(self, signature, max_iters=5, num_results=3, tools=None):

@@ -14,9 +14,9 @@ try:
 except:
     import openai
 
-from dsp.modules.cache_utils import CacheMemory, NotebookCacheMemory, cache_turn_on
-from dsp.modules.lm import LM
-from dsp.utils.settings import settings
+from dspy.dsp.modules.cache_utils import CacheMemory, NotebookCacheMemory, cache_turn_on
+from dspy.dsp.modules.lm import LM
+from dspy.dsp.utils.settings import settings
 
 try:
     OPENAI_LEGACY = int(openai.version.__version__[0]) == 0

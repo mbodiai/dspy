@@ -1,0 +1,3 @@
+[submodule "mbodi/faiss_prebuilt"]
+	path = mbodi/faiss_prebuilt
+	url = https://github.com/onfido/faiss_prebuilt

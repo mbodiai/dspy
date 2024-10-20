@@ -7,8 +7,8 @@ The constructor initializes the `ProgramOfThought` class and sets up its attribu
 ```python
 import dsp
 import dspy
-from ..primitives.program import Module
-from ..primitives.python_interpreter import CodePrompt, PythonInterpreter
+from dspy..primitives.program import Module
+from dspy..primitives.python_interpreter import CodePrompt, PythonInterpreter
 import re
 
 class ProgramOfThought(Module):

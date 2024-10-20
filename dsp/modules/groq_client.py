@@ -12,8 +12,8 @@ except ImportError:
     groq_api_error = Exception
 
 
-from dsp.modules.lm import LM
-from dsp.utils.settings import settings
+from dspy.dsp.modules.lm import LM
+from dspy.dsp.utils.settings import settings
 
 
 def backoff_hdlr(details):

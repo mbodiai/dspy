@@ -7,8 +7,8 @@ The constructor initializes the `MultiChainComparison` class and sets up its att
 The class incorporates multiple student attempt reasonings and concludes with the selected best reasoning path out of the available attempts.
 
 ```python
-from .predict import Predict
-from ..primitives.program import Module
+from dspy.predict import Predict
+from dspy..primitives.program import Module
 
 import dsp
 

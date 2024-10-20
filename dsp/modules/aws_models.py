@@ -7,8 +7,8 @@ import logging
 from abc import abstractmethod
 from typing import Any
 
-from dsp.modules.aws_providers import AWSProvider, Bedrock, Sagemaker
-from dsp.modules.lm import LM
+from dspy.dsp.modules.aws_providers import AWSProvider, Bedrock, Sagemaker
+from dspy.dsp.modules.lm import LM
 
 # Heuristic translating number of chars to tokens
 # ~4 chars = 1 token

@@ -1,7 +1,7 @@
-from .modules import *  # noqa
-from .primitives import *  # noqa
-from .adapters import *  # noqa
-from .utils import settings  # noqa
+from dspy.dsp.modules import *  # noqa
+from dspy.dsp.primitives import *  # noqa
+from dspy.dsp.adapters import *  # noqa
+from dspy.dsp.utils import settings  # noqa
 
 """
 TODO:

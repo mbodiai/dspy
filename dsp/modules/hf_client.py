@@ -9,9 +9,9 @@ from typing import Literal
 import backoff
 import requests
 
-from dsp.modules.cache_utils import CacheMemory, NotebookCacheMemory
-from dsp.modules.hf import HFModel, openai_to_hf
-from dsp.utils.settings import settings
+from dspy.dsp.modules.cache_utils import CacheMemory, NotebookCacheMemory
+from dspy.dsp.modules.hf import HFModel, openai_to_hf
+from dspy.dsp.utils.settings import settings
 
 ERRORS = Exception
 

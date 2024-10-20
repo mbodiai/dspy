@@ -1,0 +1,13 @@
+digraph {
+	lm [label="LM Details: kwargs: {'temperature': 0.0, 'max_tokens': 100, 'top_p': 1, 'frequency_penalty': 0, 'presence_penalty': 0, 'n': 1, 'model': 'gpt-3.5-turbo'}, model_type: chat, provider: openai, system_prompt: None, tracker: None" shape=box]
+	rm [label="RM Details: post_requests: False, url: http://20.102.90.50:2017/wiki17_abstracts" shape=box]
+	rm -> lm [label="RM used in Module"]
+	RAG__generate_answer__ChainOfThought_input_context [label="context: (may content relevant facts)" shape=ellipse]
+	RAG__generate_answer__ChainOfThought_input_context -> RAG__generate_answer__ChainOfThought
+	RAG__generate_answer__ChainOfThought_input_question [label="question: (${question})" shape=ellipse]
+	RAG__generate_answer__ChainOfThought_input_question -> RAG__generate_answer__ChainOfThought
+	RAG__generate_answer__ChainOfThought_output_answer [label="answer: (often between 10 and 50 words)" shape=ellipse]
+	RAG__generate_answer__ChainOfThought -> RAG__generate_answer__ChainOfThought_output_answer
+	RAG__generate_answer__ChainOfThought [label=RAG__generate_answer__ChainOfThought shape=box]
+	lm -> RAG__generate_answer__ChainOfThought [label="LM used in Module"]
+}

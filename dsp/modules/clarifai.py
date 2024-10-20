@@ -1,7 +1,7 @@
 """Clarifai LM integration"""
 from typing import Any, Optional
 
-from dsp.modules.lm import LM
+from dspy.dsp.modules.lm import LM
 
 
 class ClarifaiLLM(LM):

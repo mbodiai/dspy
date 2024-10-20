@@ -4,12 +4,11 @@ from typing import Literal, Optional
 
 import openai
 
-from dsp.modules.cache_utils import CacheMemory, NotebookCacheMemory, cache_turn_on
-from dsp.modules.gpt3 import GPT3
+from dspy.dsp.modules.cache_utils import CacheMemory, NotebookCacheMemory, cache_turn_on
+from dspy.dsp.modules.gpt3 import GPT3
 
 try:
-    import openai.error
-    from openai.openai_object import OpenAIObject
+
     ERRORS = (openai.error.RateLimitError, openai.error.ServiceUnavailableError, openai.error.APIError)
 except Exception:
     ERRORS = (openai.RateLimitError, openai.APIError)

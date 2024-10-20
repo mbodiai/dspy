@@ -10,7 +10,7 @@ from dsp.modules.lm import LM
 try:
     import anthropic
 
-    anthropic_rate_limit = anthropic.RateLimitError
+    from anthropic import RateLimitError
 except ImportError:
     anthropic_rate_limit = Exception
 

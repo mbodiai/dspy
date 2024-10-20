@@ -7,7 +7,7 @@ from typing import get_args, get_origin
 import pydantic
 from pydantic import TypeAdapter
 
-from .base import Adapter
+from dspy.base import Adapter
 
 field_header_pattern = re.compile(r"\[\[ ## (\w+) ## \]\]")
 

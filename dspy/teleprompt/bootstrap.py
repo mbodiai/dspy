@@ -1,5 +1,6 @@
 import random
 import threading
+import traceback
 from typing import Dict, Optional
 
 import tqdm
@@ -8,8 +9,8 @@ import dsp
 import dspy
 from dspy.primitives import Example
 
-from .teleprompt import Teleprompter
-from .vanilla import LabeledFewShot
+from dspy.teleprompt import Teleprompter
+from dspy.vanilla import LabeledFewShot
 
 # TODO: metrics should return an object with __bool__ basically, but fine if they're more complex.
 # They can also be sortable.
@@ -207,7 +208,9 @@ class BootstrapFewShot(Teleprompter):
                 self.error_count += 1
                 current_error_count = self.error_count
             if current_error_count >= self.max_errors:
+                traceback.print_exc()
                 raise e
+
             dspy.logger.error(f"Failed to run or to evaluate example {example} with {self.metric} due to {e}.")
 
         if success:

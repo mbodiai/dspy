@@ -3,7 +3,7 @@
 import os
 from typing import Literal, Optional
 
-from dsp.modules.lm import LM
+from dspy.dsp.modules.lm import LM
 
 # from dsp.modules.finetuning.finetune_hf import preprocess_prompt
 

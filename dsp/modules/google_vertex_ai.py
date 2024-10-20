@@ -5,8 +5,8 @@ from typing import Any, Dict
 import backoff
 from pydantic_core import PydanticCustomError
 
-from dsp.modules.lm import LM
-from dsp.utils.settings import settings
+from dspy.dsp.modules.lm import LM
+from dspy.dsp.utils.settings import settings
 
 try:
     import vertexai  # type: ignore[import-untyped]

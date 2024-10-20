@@ -4,8 +4,8 @@ from typing import Any, Optional
 
 import backoff
 
-from dsp.modules.lm import LM
-from dsp.utils.settings import settings
+from dspy.dsp.modules.lm import LM
+from dspy.dsp.utils.settings import settings
 
 try:
     import google.generativeai as genai
